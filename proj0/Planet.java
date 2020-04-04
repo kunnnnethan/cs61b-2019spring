@@ -1,81 +1,100 @@
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-
 public class Planet {
+    public double xxPos;
+    public double yyPos;
+    public double xxVel;
+    public double yyVel;
+    public double mass;
+    public String imgFileName;
+    public static final double G = 6.67e-11;
 
-    /** 讀入檔案 檔案室照順序讀的 以空格隔開 變數型態要注意 */
-    public static double readRadius(String filename){
-        In in = new In(filename);
-        int firstItemInFile = in.readInt();
-        double secondItemInFile = in.readDouble();
-        return secondItemInFile;
+    /** 寫一個巨大Body List */
+    /** 如果變數一樣的話要設定this*/
+    /** this.xxPos = xxPos; */
+    public Planet(double xP, double yP, double xV,
+                double yV, double m, String img){
+        xxPos = xP;
+        yyPos = yP;
+        xxVel = xV;
+        yyVel = yV;
+        mass = m;
+        imgFileName = img;
     }
 
-    /** List也可以放入 array裡面 先初始化一個新的 array of List 在array中依序放入第一個List後 開始把每個讀入到的值帶入 */
-    public static Body[] readBodies(String filename){
-        In in = new In(filename);
-        int size = in.readInt();
-        Body[] bodies = new Body[size];
-        for(int i = 0; i < size; i ++){
-            bodies[i] = new Body(0, 0, 0, 0, 0, "img");
-        }
-        double trash = in.readDouble();
-        for(int j = 0; j < size; j ++){
-            bodies[j].xxPos = in.readDouble();
-            bodies[j].yyPos = in.readDouble();
-            bodies[j].xxVel = in.readDouble();
-            bodies[j].yyVel = in.readDouble();
-            bodies[j].mass = in.readDouble();
-            bodies[j].imgFileName = in.readString();
-        }
-        return bodies;
+    /**應該是複製的功能 但整個城市看起來好像沒有實際用處？*/
+    public Planet(Planet b){
+        xxPos = b.xxPos;
+        yyPos = b.yyPos;
+        xxVel = b.xxVel;
+        yyVel = b.yyVel;
+        mass = b.mass;
+        imgFileName = b.imgFileName;
     }
 
-    /** 執行程式的主要Method */
-    public static void main(String[] args){
-        double T = Double.parseDouble(args[0]);
-        double dt = Double.parseDouble(args[1]);
-        String filename = args[2];
-        double R = readRadius(filename);
-        Body[] bodies = readBodies(filename);
-
-        StdDraw.setXscale(-R, R);
-        StdDraw.setYscale(-R, R);
-        StdDraw.clear();
-        for(int time = 0; time < T; T = T + dt){
-            StdDraw.enableDoubleBuffering();
-            StdDraw.picture(0, 0, "images/starfield.jpg");
-            double[] xForces = new double[5];
-            double[] yForces = new double[5];
-            for(int i = 0; i < 5; i++){
-                double x = bodies[i].calcNetForceExertedByX(bodies);
-            xForces[i] = x;
-                double y = bodies[i].calcNetForceExertedByY(bodies);
-            yForces[i] = y;
-            }
-            for(int i = 0; i < 5; i++){
-                bodies[i].draw();
-            }
-            for(int i = 0; i < 5; i++){
-                bodies[i].update(dt, xForces[i], yForces[i]);
-            }
-            StdDraw.show();
-            StdDraw.pause(10);
-        }
-
-        /** copy from reference */
-        /** showing the result */
-        StdOut.printf("%d\n", bodies.length);
-        StdOut.printf("%.2e\n", R);
-        for (int i = 0; i < bodies.length; i++) {
-            StdOut.printf("%11.4e %11.4e %11.4e %11.4e %11.4e %12s\n",
-                    bodies[i].xxPos, bodies[i].yyPos, bodies[i].xxVel,
-                    bodies[i].yyVel, bodies[i].mass, bodies[i].imgFileName);
-        }
+    /**計算距離 this就是在要執行函數時逗點前面那個*/
+    public double calcDistance(Planet target) {
+        return Math.sqrt((target.xxPos-this.xxPos)*(target.xxPos-this.xxPos)+(target.yyPos-this.yyPos)*(target.yyPos-this.yyPos));
     }
 
+    /** Calculating Force */
+    public double calcForceExertedBy(Planet target){
+        double r = this.calcDistance(target);
+        double F = G*this.mass*target.mass/Math.pow(r, 2);
+        return F;
+    }
+
+    /** Calculating Force X */
+    public double calcForceExertedByX(Planet target){
+        double r = this.calcDistance(target);
+        double F = this.calcForceExertedBy(target);
+        double x = F*(target.xxPos-this.xxPos)/r;
+        return x;
+    }
+
+    /** Calculating ForceY  */
+    public double calcForceExertedByY(Planet target){
+        double r = this.calcDistance(target);
+        double F = this.calcForceExertedBy(target);
+        double y = F*(target.yyPos-this.yyPos)/r;
+        return y;
+    }
+
+    /** Calculating Net Force X */
+    /** 注意 變數如果不是在Method 裡面定義 而是在Global定義的話 計算後的數值不會歸零 這邊要小心 */
+    public double calcNetForceExertedByX(Planet[] allBodies){
+        double xNetForce = 0;
+        for(int i = 0; i < allBodies.length; i++) {
+            if (this.equals(allBodies[i])) {
+                continue;
+            }
+            xNetForce = xNetForce + this.calcForceExertedByX(allBodies[i]);
+        }
+        return xNetForce;
+    }
+
+    /** Calculating Net Force Y */
+    /** 注意 變數如果不是在Method 裡面定義 而是在Global定義的話 計算後的數值不會歸零 這邊要小心 */
+    public double calcNetForceExertedByY(Planet[] allBodies){
+        double yNetForce = 0;
+        for(int i = 0; i < allBodies.length; i++){
+            if (this.equals(allBodies[i])) {
+                continue;
+            }
+            yNetForce = yNetForce + this.calcForceExertedByY(allBodies[i]);
+        }
+        return yNetForce;
+    }
+
+    /** 用物理定義計算位置 */
+    public double update(double dt, double fx, double fy){
+        this.xxVel = this.xxVel + fx*dt/this.mass;
+        this.yyVel = this.yyVel + fy*dt/this.mass;
+        this.xxPos = this.xxPos + this.xxVel*dt;
+        this.yyPos = this.yyPos + this.yyVel*dt;
+        return 0;
+    }
+
+    /** 畫出行星的圖 */
+    public void draw(){
+        StdDraw.picture(xxPos, yyPos, "images/"+imgFileName);
+    }
 }
