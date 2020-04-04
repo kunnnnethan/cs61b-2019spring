@@ -48,7 +48,7 @@ public class NBody {
         StdDraw.clear();
         for(int time = 0; time < T; T = T + dt){
             StdDraw.enableDoubleBuffering();
-            StdDraw.picture(0, 0, "images/starfield.jpg");
+            StdDraw.picture(0, 0, "images/sun.jpg");
             double[] xForces = new double[5];
             double[] yForces = new double[5];
             for(int i = 0; i < 5; i++){
