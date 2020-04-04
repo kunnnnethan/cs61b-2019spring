@@ -5,7 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class NBody {
+public class Planet {
 
     /** 讀入檔案 檔案室照順序讀的 以空格隔開 變數型態要注意 */
     public static double readRadius(String filename){
