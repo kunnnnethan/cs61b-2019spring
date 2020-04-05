@@ -68,7 +68,7 @@ public class TestArrayDequeGold {
         System.out.println("addLast("+random+")");
 
         Integer actual2 = ads2.removeFirst();
-        Integer expected2 = ads2.removeFirst();
+        Integer expected2 = sad2.removeFirst();
         assertEquals("removeFirst()", actual2, expected2);
         System.out.println("removeFirst()");
 
