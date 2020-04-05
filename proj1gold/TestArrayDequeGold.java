@@ -10,118 +10,112 @@ public class TestArrayDequeGold {
         int actual;
         int expected;
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 100; i++) {
             int random = StdRandom.uniform(100);
             double numberBetweenZeroAndOne = StdRandom.uniform();
             if (numberBetweenZeroAndOne < 0.5) {
                 ads.addLast(random);
                 sad.addLast(random);
-                actual = ads.get(i);
-                expected = sad.get(i);
+                actual = ads.get(0);
+                expected = sad.get(0);
                 System.out.println("addLast(" + random + ")");
                 assertEquals("addLast(" + random + ")", expected, actual);
+                numberBetweenZeroAndOne = StdRandom.uniform();
+                if (numberBetweenZeroAndOne < 0.5) {
+                    Integer a = ads.removeLast();
+                    Integer b = sad.removeLast();
+                    actual = a;
+                    expected = b;
+                    System.out.println("removeLast(" + a + ")" + " and " + "removeLast(" + b + ")");
+                    assertEquals("removeLast(" + a + ")" + " and " + "removeLast(" + b + ")", expected, actual);
+                } else {
+                    Integer c = ads.removeFirst();
+                    Integer d = sad.removeFirst();
+                    actual = c;
+                    expected = d;
+                    System.out.println("removeFirst(" + c + ")" + " and " + "removeFirst(" + d + ")");
+                    assertEquals("removeFirst(" + c + ")" + " and " + "removeFirst(" + d + ")", expected, actual);
+                }
             } else {
                 ads.addFirst(random);
                 sad.addFirst(random);
-                actual = ads.get(i);
-                expected = sad.get(i);
+                actual = ads.get(0);
+                expected = sad.get(0);
                 System.out.println("addFirst(" + random + ")");
                 assertEquals("addFirst(" + random + ")", expected, actual);
+                numberBetweenZeroAndOne = StdRandom.uniform();
+                if (numberBetweenZeroAndOne < 0.5) {
+                    Integer a = ads.removeLast();
+                    Integer b = sad.removeLast();
+                    actual = a;
+                    expected = b;
+                    System.out.println("removeLast(" + a + ")" + " and " + "removeLast(" + b + ")");
+                    assertEquals("removeLast(" + a + ")" + " and " + "removeLast(" + b + ")", expected, actual);
+                } else {
+                    Integer c = ads.removeFirst();
+                    Integer d = sad.removeFirst();
+                    actual = c;
+                    expected = d;
+                    System.out.println("removeFirst(" + c + ")" + " and " + "removeFirst(" + d + ")");
+                    assertEquals("removeFirst(" + c + ")" + " and " + "removeFirst(" + d + ")", expected, actual);
+                }
             }
         }
+    }
+    private static final int nCall = 1000; // How many to call methods randomly
+    private static String message = ""; // Store failure sequence
 
-        for (int i = 0; i < 3; i++) {
-            int random = StdRandom.uniform(100);
-            double numberBetweenZeroAndOne = StdRandom.uniform();
-            if (numberBetweenZeroAndOne < 0.5) {
-                Integer a = ads.removeLast();
-                Integer b = sad.removeLast();
-                actual = a;
-                expected = b;
-                System.out.println("removeFirst(" + a + ")" + " and " + "removeFirst(" + b + ")");
-                assertEquals("removeFirst(" + a + ")" + " and " + "removeFirst(" + b + ")", expected, actual);
+    /** Given uniformly distributed random double between 0 and 1,
+     * randomly adds Integer to deque.
+     * */
+    private void randomAdd(double random, Integer i, StudentArrayDeque<Integer> sad, ArrayDequeSolution<Integer> ads) {
+        if (random < 0.5) {
+            sad.addFirst(i);
+            ads.addFirst(i);
+            message += "\naddFirst(" + i + ")";
+        } else {
+            sad.addLast(i);
+            ads.addLast(i);
+            message += "\naddLast(" + i + ")";
+        }
+    }
+
+    /** Given uniformly distributed random double between 0 and 1,
+     * randomly adds Integer to deque.
+     * */
+    private void randomRemove(double random, Integer i, StudentArrayDeque<Integer> sad, ArrayDequeSolution<Integer> ads) {
+        Integer expected;
+        Integer actual;
+        if (random < 0.5) {
+            expected = ads.removeFirst();
+            actual = sad.removeFirst();
+            message += "\nremoveFirst()";
+        } else {
+            expected = ads.removeLast();
+            actual = sad.removeLast();
+            message += "\nremoveLast()";
+        }
+        assertEquals(message, expected, actual);
+    }
+
+    @Test
+    public void testRandomized() {
+        StudentArrayDeque<Integer> sad = new StudentArrayDeque<>();
+        ArrayDequeSolution<Integer> ads = new ArrayDequeSolution<>();
+
+        for (Integer i = 0; i < nCall; i += 1) {
+            if (sad.isEmpty() || ads.isEmpty()) {
+                double random = StdRandom.uniform();
+                randomAdd(random, i, sad, ads);
             } else {
-                Integer c = ads.removeFirst();
-                Integer d = sad.removeFirst();
-                actual = c;
-                expected = d;
-                System.out.println("removeFirst(" + c + ")" + " and " + "removeFirst(" + d + ")");
-                assertEquals("removeFirst(" + c + ")" + " and " + "removeFirst(" + d + ")", expected, actual);
+                double random1 = StdRandom.uniform();
+                double random2 = StdRandom.uniform();
+                if (random1 < 0.5) {
+                    randomAdd(random2, i, sad, ads);
+                } else {
+                    randomRemove(random2, i, sad, ads);
+                }
             }
         }
     }
-
-    @Test
-    public void testArrayDeque2() {
-        ArrayDequeSolution<Integer> ads2 = new ArrayDequeSolution<>();
-        StudentArrayDeque<Integer> sad2 = new StudentArrayDeque<>();
-        int random = StdRandom.uniform(100);
-        ads2.addFirst(random);
-        sad2.addFirst(random);
-        assertEquals("addFirst("+random+")", ads2.get(0), sad2.get(0));
-        System.out.println("addFirst("+random+")");
-
-        random = StdRandom.uniform(100);
-        ads2.addLast(random);
-        sad2.addLast(random);
-        assertEquals("addLast("+random+")", ads2.get(1), sad2.get(1));
-        System.out.println("addLast("+random+")");
-
-        Integer actual2 = ads2.removeFirst();
-        Integer expected2 = sad2.removeFirst();
-        assertEquals("removeFirst()", actual2, expected2);
-        System.out.println("removeFirst()");
-
-        actual2 = ads2.removeLast();
-        expected2 = sad2.removeLast();
-        assertEquals("removeLast()", actual2, expected2);
-        System.out.println("removeLast()");
-    }
-
-    /**
-    @Test
-    public void testTask3(){
-        ArrayDequeSolution<Integer> ads3 = new ArrayDequeSolution<>();
-        StudentArrayDeque<Integer> sad3 = new StudentArrayDeque<>();
-        int actual3;
-        int expected3;
-        int i = 0;
-        while (i < 10) {
-            int random = StdRandom.uniform(100);
-            double numberBetweenZeroAndOne = StdRandom.uniform();
-            if (numberBetweenZeroAndOne < 0.25) {
-                ads3.addLast(random);
-                sad3.addLast(random);
-                actual3 = ads3.get(i);
-                expected3 = sad3.get(i);
-                System.out.println("addLast(" + random + ")");
-                assertEquals("addLast(" + random + ")", expected3, actual3);
-                i = i + 1;
-            } else if (numberBetweenZeroAndOne < 0.5){
-                ads3.addFirst(random);
-                sad3.addFirst(random);
-                actual3 = ads3.get(i);
-                expected3 = sad3.get(i);
-                System.out.println("addFirst(" + random + ")");
-                assertEquals("addFirst(" + random + ")", expected3, actual3);
-                i = i + 1;
-            } else if (numberBetweenZeroAndOne < 0.75 || ads3.size() != 0 || sad3.size() != 0){
-                Integer c = ads3.removeFirst();
-                Integer d = sad3.removeFirst();
-                actual3 = c;
-                expected3 = d;
-                System.out.println("removeFirst(" + c + ")" + " and " + "removeFirst(" + d + ")");
-                assertEquals("removeFirst(" + c + ")" + " and " + "removeFirst(" + d + ")", expected3, actual3);
-                i = i - 1;
-            } else if (ads3.size() != 0 || sad3.size() != 0){
-                Integer a = ads3.removeLast();
-                Integer b = sad3.removeLast();
-                actual3 = a;
-                expected3 = b;
-                System.out.println("removeFirst(" + a + ")" + " and " + "removeFirst(" + b + ")");
-                assertEquals("removeFirst(" + a + ")" + " and " + "removeFirst(" + b + ")", expected3, actual3);
-                i = i + 1;
-            }
-        }
-    }*/
 }
