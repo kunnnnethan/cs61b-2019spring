@@ -26,6 +26,7 @@ public class TestBSTMap {
             assertTrue( null != b.get("hi" + i) && (b.get("hi"+i).equals(1+i))
                         && b.containsKey("hi" + i));
         }
+        b.printInOrder();
         assertEquals(455, b.size());
         b.clear();
         assertEquals(0, b.size());
@@ -75,6 +76,27 @@ public class TestBSTMap {
     	BSTMap<String, Integer> b = new BSTMap<String, Integer>();
         b.put("hi", 1);
         assertTrue(b.containsKey("hi") && b.get("hi") != null);
+    }
+
+    @Test
+    public void removeTest() {
+        BSTMap<String, Integer> b = new BSTMap<String, Integer>();
+        b.put("hi" + 4, 4);
+        b.put("hi" + 2, 2);
+        b.put("hi" + 3, 3);
+        b.put("hi" + 1, 1);
+        b.put("hi" + 6, 6);
+        b.put("hi" + 5, 5);
+        b.put("hi" + 7, 7);
+        assertTrue(b.containsKey("hi2"));
+        assertFalse(b.containsKey("hi9"));
+        b.remove("hi4");
+        b.remove("hi1");
+        assertFalse(b.containsKey("hi4"));
+        assertTrue(b.containsKey("hi6"));
+        assertTrue(b.containsKey("hi7"));
+        assertTrue(b.containsKey("hi5"));
+        assertEquals(5, b.size());
     }
 
     public static void main(String[] args) {
