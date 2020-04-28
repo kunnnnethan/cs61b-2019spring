@@ -16,12 +16,12 @@ public class NBody {
     }
 
     /** List也可以放入 array裡面 先初始化一個新的 array of List 在array中依序放入第一個List後 開始把每個讀入到的值帶入 */
-    public static Body[] readBodies(String filename){
+    public static Planet[] readBodies(String filename){
         In in = new In(filename);
         int size = in.readInt();
-        Body[] bodies = new Body[size];
+        Planet[] bodies = new Planet[size];
         for(int i = 0; i < size; i ++){
-            bodies[i] = new Body(0, 0, 0, 0, 0, "img");
+            bodies[i] = new Planet(0, 0, 0, 0, 0, "img");
         }
         double trash = in.readDouble();
         for(int j = 0; j < size; j ++){
@@ -41,14 +41,14 @@ public class NBody {
         double dt = Double.parseDouble(args[1]);
         String filename = args[2];
         double R = readRadius(filename);
-        Body[] bodies = readBodies(filename);
+        Planet[] bodies = readBodies(filename);
 
         StdDraw.setXscale(-R, R);
         StdDraw.setYscale(-R, R);
         StdDraw.clear();
         for(int time = 0; time < T; T = T + dt){
             StdDraw.enableDoubleBuffering();
-            StdDraw.picture(0, 0, "images/starfield.jpg");
+            StdDraw.picture(0, 0, "images/sun.jpg");
             double[] xForces = new double[5];
             double[] yForces = new double[5];
             for(int i = 0; i < 5; i++){
