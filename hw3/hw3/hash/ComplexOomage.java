@@ -14,6 +14,9 @@ public class ComplexOomage implements Oomage {
         int total = 0;
         for (int x : params) {
             total = total * 256;
+            //if (total >= 16843008) {
+            //    total = total - 16843008;
+            //}
             total = total + x;
         }
         return total;
