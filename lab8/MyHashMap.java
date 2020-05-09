@@ -6,6 +6,7 @@ public class MyHashMap<K, V> implements Map61B {
     private int initialSize = 16;
     private double loadFactor = 0.75;
     private int size = 0;
+    private int threshold;
     public Node[] table;
     public HashSet<K> allKey;
 
@@ -24,11 +25,14 @@ public class MyHashMap<K, V> implements Map61B {
     public MyHashMap() {
         table = new Node[initialSize];
         allKey = new HashSet<>();
+        threshold = (int) (initialSize * loadFactor);
     }
 
     public MyHashMap(int initialSize) {
         this.initialSize = initialSize;
         table = new Node[initialSize];
+        allKey = new HashSet<>();
+        threshold = (int) (initialSize * loadFactor);
     }
 
 
@@ -36,6 +40,8 @@ public class MyHashMap<K, V> implements Map61B {
         this.initialSize = initialSize;
         this.loadFactor = loadFactor;
         table = new Node[initialSize];
+        allKey = new HashSet<>();
+        threshold = (int) (initialSize * loadFactor);
     }
 
     @Override
@@ -85,8 +91,8 @@ public class MyHashMap<K, V> implements Map61B {
     @Override
     public void put(Object key, Object value) {
 
-        if (size() / table.length >= 0.75) {
-            reSize();
+        if (size() / table.length >= threshold) {
+            resize();
         }
 
         int index = key.hashCode() % table.length;
@@ -123,34 +129,37 @@ public class MyHashMap<K, V> implements Map61B {
         size += 1;
     }
 
-    private Node[] reSize() {
+    private void resize() {
         Node[] temp = new Node[table.length * 2];
 
-        for (Node i : table) {
-            if (i == null) {
-                continue;
-            }
+        for (int count = 0; count < table.length; count += 1) {
+            Node i = table[count];
 
-            int index = i.key.hashCode() % (table.length * 2);
+            while (i != null) {
 
-            if (index < 0) {
-                index = index + table.length * 2;
-            }
+                int index = i.key.hashCode() % (table.length * 2);
 
-            if (temp[index] != null) {
-                Node currNode = temp[index];
-                while (currNode.next != null) {
-                    currNode = currNode.next;
+                if (index < 0) {
+                    index = index + table.length * 2;
                 }
-                currNode.next = i;
-                continue;
-            }
 
-            temp[index] = i;
+                if (temp[index] != null) {
+                    Node currNode = temp[index];
+                    while (currNode.next != null) {
+                        currNode = currNode.next;
+                    }
+                    currNode.next = new Node(i.key, i.value, null);
+                    i = i.next;
+                    continue;
+                }
+
+                temp[index] = new Node(i.key, i.value, null);
+                i = i.next;
+            }
         }
 
         table = temp;
-        return table;
+        threshold = (int) (table.length * loadFactor);
     }
 
     @Override
@@ -179,19 +188,18 @@ public class MyHashMap<K, V> implements Map61B {
         // currNode多於一個的時候
         if (currNode.next != null) {
             // currNode.key是在第一個的時候
-            if (currNode.key == key) {
+            if (currNode.key.equals(key)) {
                 tempValue = currNode.value;
                 Node temp = currNode.next;
-                currNode = null;
                 table[index] = temp;
+                return tempValue;
             }
 
             // currNode.key不是在第一個的時候
             while (currNode.next != null) {
-                if (currNode.next.key == key) {
+                if (currNode.next.key.equals(key)) {
                     tempValue = currNode.next.value;
                     Node temp = currNode.next.next;
-                    currNode.next = null;
                     currNode.next = temp;
                     break;
                 }
@@ -212,23 +220,23 @@ public class MyHashMap<K, V> implements Map61B {
 
         // currNode只有一個的時候
         if (currNode.next == null) {
-            currNode = null;
+            table[index] = null;
+            return value;
         }
 
         // currNode多於一個的時候
         if (currNode.next != null) {
             // currNode.key是在第一個的時候
-            if (currNode.key == key) {
+            if (currNode.key.equals(key)) {
                 Node temp = currNode.next;
-                currNode = null;
                 table[index] = temp;
+                return value;
             }
 
             // currNode.key不是在第一個的時候
             while (currNode.next != null) {
-                if (currNode.next.key == key) {
+                if (currNode.next.key.equals(key)) {
                     Node temp = currNode.next.next;
-                    currNode.next = null;
                     currNode.next = temp;
                     break;
                 }
@@ -240,7 +248,7 @@ public class MyHashMap<K, V> implements Map61B {
 
     @Override
     public Iterator iterator() {
-        return new hashMapIterator();
+        return new hashMapIterator(); // or simply --> return keySey().iterator();
     }
 
     private class hashMapIterator implements Iterator<K>{
