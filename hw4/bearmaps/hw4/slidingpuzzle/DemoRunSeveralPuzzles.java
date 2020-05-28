@@ -1,5 +1,6 @@
 package bearmaps.hw4.slidingpuzzle;
 
+import bearmaps.hw4.AStarSolver;
 import bearmaps.hw4.LazySolver;
 import bearmaps.hw4.ShortestPathsSolver;
 import bearmaps.hw4.SolutionPrinter;
@@ -22,17 +23,48 @@ public class DemoRunSeveralPuzzles {
 
     public static void main(String[] args) {
 
-        String[] puzzleFiles = hardPuzzles;
+        String[] basicPuzzleFiles = basicPuzzles;
 
-        System.out.println(puzzleFiles.length + " puzzle files being run.");
-        for (int i = 0; i < puzzleFiles.length; i += 1) {
-            Board start = Board.readBoard(puzzleFiles[i]);
+        System.out.println(basicPuzzleFiles.length + " puzzle files being run.");
+        for (int i = 0; i < basicPuzzleFiles.length; i += 1) {
+            Board start = Board.readBoard(basicPuzzleFiles[i]);
             int N = start.size();
             Board goal = Board.solved(N);
 
             BoardGraph spg = new BoardGraph();
-            System.out.println(puzzleFiles[i] + ":");
-            ShortestPathsSolver<Board> solver = new LazySolver<>(spg, start, goal, 30);
+            System.out.println(basicPuzzleFiles[i] + ":");
+            // ShortestPathsSolver<Board> solver = new LazySolver<>(spg, start, goal, 30);
+            ShortestPathsSolver<Board> solver = new AStarSolver<>(spg, start, goal, 10);
+            SolutionPrinter.summarizeOutcome(solver);
+        }
+
+        String[] hardPuzzleFiles = hardPuzzles;
+
+        System.out.println(hardPuzzleFiles.length + " puzzle files being run.");
+        for (int i = 0; i < hardPuzzleFiles.length; i += 1) {
+            Board start = Board.readBoard(hardPuzzleFiles[i]);
+            int N = start.size();
+            Board goal = Board.solved(N);
+
+            BoardGraph spg = new BoardGraph();
+            System.out.println(hardPuzzleFiles[i] + ":");
+            // ShortestPathsSolver<Board> solver = new LazySolver<>(spg, start, goal, 30);
+            ShortestPathsSolver<Board> solver = new AStarSolver<>(spg, start, goal, 10);
+            SolutionPrinter.summarizeOutcome(solver);
+        }
+
+        String[] elitePuzzleFiles = elitePuzzles;
+
+        System.out.println(elitePuzzleFiles.length + " puzzle files being run.");
+        for (int i = 0; i < elitePuzzleFiles.length; i += 1) {
+            Board start = Board.readBoard(elitePuzzleFiles[i]);
+            int N = start.size();
+            Board goal = Board.solved(N);
+
+            BoardGraph spg = new BoardGraph();
+            System.out.println(elitePuzzleFiles[i] + ":");
+            // ShortestPathsSolver<Board> solver = new LazySolver<>(spg, start, goal, 30);
+            ShortestPathsSolver<Board> solver = new AStarSolver<>(spg, start, goal, 10);
             SolutionPrinter.summarizeOutcome(solver);
         }
 

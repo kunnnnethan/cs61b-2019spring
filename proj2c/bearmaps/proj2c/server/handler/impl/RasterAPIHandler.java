@@ -17,8 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static bearmaps.proj2c.utils.Constants.SEMANTIC_STREET_GRAPH;
-import static bearmaps.proj2c.utils.Constants.ROUTE_LIST;
+import static bearmaps.proj2c.utils.Constants.*;
 
 /**
  * Handles requests from the web browser for map images. These images
@@ -84,12 +83,94 @@ public class RasterAPIHandler extends APIRouteHandler<Map<String, Double>, Map<S
      */
     @Override
     public Map<String, Object> processRequest(Map<String, Double> requestParams, Response response) {
-        //System.out.println("yo, wanna know the parameters given by the web browser? They are:");
-        //System.out.println(requestParams);
+        System.out.println("yo, wanna know the parameters given by the web browser? They are:");
+        System.out.println(requestParams);
+        /*System.out.println("Since you haven't implemented RasterAPIHandler.processRequest, nothing is displayed in "
+                + "your browser.");*/
         Map<String, Object> results = new HashMap<>();
-        System.out.println("Since you haven't implemented RasterAPIHandler.processRequest, nothing is displayed in "
-                + "your browser.");
+
+        // define variable
+        String[][] renderGrid;
+        double ullon;
+        double ullat;
+        double lrlon;
+        double lrlat;
+        int depth;
+        boolean querySuccess = true;
+
+        // get
+        ullon = requestParams.get("ullon");
+        ullat = requestParams.get("ullat");
+        lrlon = requestParams.get("lrlon");
+        lrlat = requestParams.get("lrlat");
+
+        // calculate depth
+        double LonDpp = ((lrlon - ullon) / requestParams.get("w"));
+        double LatDpp = ((ullat - lrlat) / requestParams.get("h"));
+        if (LonDpp > LatDpp) {
+            depth = calcDepth(LonDpp);
+        } else {
+            depth = calcDepth(LatDpp);
+        }
+        results.put("depth", depth);
+
+        // calculate which image is belong to the position of the place
+        int left = calcL((ullon - ROOT_ULLON) / (ROOT_LRLON - ROOT_ULLON), depth);
+        int right = calcL((lrlon - ROOT_ULLON) / (ROOT_LRLON - ROOT_ULLON), depth);
+        int up = calcL((ROOT_ULLAT - ullat) / (ROOT_ULLAT - ROOT_LRLAT), depth);
+        int down = calcL((ROOT_ULLAT - lrlat) / (ROOT_ULLAT - ROOT_LRLAT), depth);
+
+        // put (raster_ul_lon, lat, lon, lat 這些代表的是圖形的邊界 跟一開始get的不一樣
+        results.put("raster_ul_lon", ROOT_ULLON + left * (ROOT_LRLON - ROOT_ULLON) / Math.pow(2, depth));
+        results.put("raster_ul_lat", ROOT_ULLAT - up * (ROOT_ULLAT - ROOT_LRLAT) / Math.pow(2, depth));
+        results.put("raster_lr_lon", ROOT_ULLON + (right + 1) * (ROOT_LRLON - ROOT_ULLON) / Math.pow(2, depth));
+        results.put("raster_lr_lat", ROOT_ULLAT - (down + 1) * (ROOT_ULLAT - ROOT_LRLAT) / Math.pow(2, depth));
+
+        // input renderGrid(where the image should show up)
+        renderGrid = new String[down - up + 1][right - left + 1];
+        for (int i = 0; i < down - up + 1; i += 1) {
+            for (int j = 0; j < right - left + 1; j += 1) {
+                renderGrid[i][j] = "d" + depth + "_x" + (j + left) + "_y" + (i + up) + ".png";
+                System.out.println(renderGrid[i][j]);
+            }
+        }
+        results.put("render_grid", renderGrid);
+
+        // decide the position is unreasonable or not
+        if (Double.compare(lrlon, ROOT_ULLON) < 0
+                || Double.compare(ullon, ROOT_LRLON) > 0
+                || Double.compare(lrlat, ROOT_ULLAT) > 0
+                || Double.compare(ullat, ROOT_LRLAT) < 0
+                || Double.compare(ullon, lrlon) > 0
+                || Double.compare(lrlat, ullat) > 0 ) {
+            querySuccess = false;
+        }
+        results.put("query_success", querySuccess);
+        System.out.println(querySuccess);
+
         return results;
+    }
+
+    private int calcDepth(double require) {
+        double standard = (ROOT_LRLON - ROOT_ULLON) / TILE_SIZE;
+        int temp = (int) Math.ceil(Math.log(require / standard) / Math.log(0.5));
+        if (temp > 7) {
+            temp = 7;
+        }
+        System.out.println(temp);
+        return temp;
+    }
+
+    private int calcL(double l, int depth) {
+        int temp = (int) Math.floor(Math.pow(2, depth) * (l));
+        int limit = (int) Math.pow(2, depth) - 1;
+        if (temp > limit) {
+            temp = limit;
+        }
+        if (temp < 0) {
+            temp = 0;
+        }
+        return temp;
     }
 
     @Override

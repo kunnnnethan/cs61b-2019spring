@@ -1,7 +1,10 @@
 package bearmaps.proj2c;
 
+import bearmaps.hw4.WeightedEdge;
 import bearmaps.hw4.streetmap.Node;
 import bearmaps.hw4.streetmap.StreetMapGraph;
+import bearmaps.proj2ab.KDTree;
+import bearmaps.lab9.MyTrieSet;
 import bearmaps.proj2ab.Point;
 
 import java.util.*;
@@ -14,11 +17,42 @@ import java.util.*;
  * @author Alan Yao, Josh Hug, ________
  */
 public class AugmentedStreetMapGraph extends StreetMapGraph {
+    private KDTree kdTree;
+    Map<Point, Long> pointToID = new HashMap<>();
+    List<Point> points = new ArrayList<>();
+    MyTrieSet trie = new MyTrieSet();
+    Map<String, List<Node>> newToOldNames = new HashMap<>();
+
+    // 好像根本不用這個鬼東西 Map<Node, Point> map = new HashMap<>();
 
     public AugmentedStreetMapGraph(String dbPath) {
         super(dbPath);
+
+        // Project Part II
         // You might find it helpful to uncomment the line below:
-        // List<Node> nodes = this.getNodes();
+        List<Node> nodes = this.getNodes();
+        for (Node n : nodes) {
+
+            if (n.name() != null) {
+                String name = n.name();
+                String cleanedName = cleanString(name);
+                if (!newToOldNames.containsKey(cleanedName)) {
+                    newToOldNames.put(cleanedName, new LinkedList<>()); // 將修改過跟未修改過的存在同一個map裡
+                }
+                newToOldNames.get(cleanedName).add(n);
+                trie.add(cleanedName);
+            }
+
+            Long id = n.id();
+            // Only consider the node that has neighbors.
+            if (!this.neighbors(id).isEmpty()) {
+                Point point = new Point(n.lon(), n.lat());
+                points.add(point);
+                pointToID.put(point, id);
+            }
+        }
+
+        kdTree = new KDTree(points);
     }
 
 
@@ -30,7 +64,8 @@ public class AugmentedStreetMapGraph extends StreetMapGraph {
      * @return The id of the node in the graph closest to the target.
      */
     public long closest(double lon, double lat) {
-        return 0;
+        Point closest = kdTree.nearest(lon, lat);
+        return pointToID.get(closest);
     }
 
 
@@ -43,7 +78,16 @@ public class AugmentedStreetMapGraph extends StreetMapGraph {
      * cleaned <code>prefix</code>.
      */
     public List<String> getLocationsByPrefix(String prefix) {
-        return new LinkedList<>();
+        prefix = cleanString(prefix);
+
+        List<String> cleanedNames = trie.keysWithPrefix(prefix);
+        List<String> originalNames = new LinkedList<>();
+
+        for (String l : cleanedNames) {
+            originalNames.add(newToOldNames.get(l).get(0).name());
+        }
+
+        return originalNames;
     }
 
     /**
@@ -60,7 +104,24 @@ public class AugmentedStreetMapGraph extends StreetMapGraph {
      * "id" -> Number, The id of the node. <br>
      */
     public List<Map<String, Object>> getLocations(String locationName) {
-        return new LinkedList<>();
+        List<Map<String, Object>> results = new LinkedList<>();
+
+        locationName = cleanString(locationName);
+
+        if (newToOldNames.containsKey(locationName)) {
+            List<Node> locations = newToOldNames.get(locationName);
+
+            for (Node n : locations) {
+                Map<String, Object> locationsInformations = new HashMap<>();
+                locationsInformations.put("lat", n.lat());
+                locationsInformations.put("lon", n.lon());
+                locationsInformations.put("name", n.name());
+                locationsInformations.put("id", n.id());
+                results.add(locationsInformations);
+            }
+        }
+
+        return results;
     }
 
 
