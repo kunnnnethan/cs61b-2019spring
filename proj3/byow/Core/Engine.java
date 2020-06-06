@@ -1,8 +1,13 @@
 package byow.Core;
 
+import byow.SaveDemo.Editor;
 import byow.TileEngine.TERenderer;
 import byow.TileEngine.TETile;
 import byow.TileEngine.Tileset;
+import edu.princeton.cs.introcs.StdDraw;
+
+import java.awt.*;
+import java.io.*;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -12,14 +17,12 @@ public class Engine {
     public static final int WIDTH = 80;
     public static final int HEIGHT = 30;
     public static Random seed;
-    public static LinkedList<Position> positions; // ordered list of random points
-
-    /**
-     * Method used for exploring a fresh world. This method should handle all inputs,
-     * including inputs from the main menu.
-     */
-    public void interactWithKeyboard() {
-    }
+    public static boolean gameover;
+    public static TETile[][] world = null;
+    private StringBuilder record = new StringBuilder();
+    String information;
+    Build map;
+    Avatar avatar;
 
     /**
      * Method used for autograding and testing your code. The input string will be a series
@@ -50,325 +53,241 @@ public class Engine {
         //
         // See proj3.byow.InputDemo for a demo of how you can make a nice clean interface
         // that works for many different input types.
-
         if (!input.matches("^[0-9a-zA-Z]+$")) {
             System.out.print("Wrong input!");
             return null;
         }
 
-        TETile[][] initialWorldFrame = null;
-        String seed = "";
+        readSeed(input);
 
         // identify input
         StringInput si = new StringInput(input);
         while (si.hasNextKey()) {
-            char c = si.getNextKey();
-            if (c == 'n') {
-                ter.initialize(WIDTH, HEIGHT);
-            } else if (c == 's') {
-                initialWorldFrame = new TETile[WIDTH][HEIGHT];
-            } else {
-                seed = seed + c;
-            }
-        }
-
-        this.seed = new Random(Integer.parseInt(seed));
-        int numberOfPoint = 15 + this.seed.nextInt(25);
-
-        // build Nothing in background
-        buildBackGround(initialWorldFrame);
-
-        // build random point
-        buildRandomPoint(numberOfPoint, initialWorldFrame);
-
-        // build vertical hall
-        buildVertical(initialWorldFrame);
-
-        // build horizontal hall
-        buildHorizontal(initialWorldFrame);
-
-        // build random room
-        buildRoom(numberOfPoint, initialWorldFrame);
-
-        //build long vertical line
-        buildLongHorizontal(initialWorldFrame);
-        buildLongHorizontal(initialWorldFrame);
-
-        //build wall
-        buildWall(initialWorldFrame);
-
-        // build grass
-        buildGrass(initialWorldFrame);
-
-        // build locked door
-        buildLockedDoor(initialWorldFrame);
-
-        // result
-        //point(initialWorldFrame);
-        TETile[][] finalWorldFrame = initialWorldFrame;
-        ter.renderFrame(finalWorldFrame);
-        return finalWorldFrame;
-    }
-
-    public void buildBackGround(TETile[][] world) {
-
-        for (int x = 0; x < WIDTH; x += 1) {
-            for (int y = 0; y < HEIGHT; y += 1) {
-                world[x][y] = Tileset.NOTHING;
-            }
-        }
-    }
-
-    public void buildRandomPoint(int numberOfPoint, TETile[][] world) {
-        positions = new LinkedList<>();
-        PriorityQueue<Position> tempPositions = new PriorityQueue<>();
-
-        for (int i = 0; i < numberOfPoint; i += 1) {
-            int locationX = 2 + seed.nextInt((int) Math.round(WIDTH * 0.9));
-            int locationY = 2 + seed.nextInt((int) Math.round(HEIGHT * 0.9));
-            if (tempPositions.contains(new Position(locationX, locationY))) {
-                i -= 1;
+            char inputKey = si.getNextKey();
+            if (String.valueOf(inputKey).matches("^[0-9]+$")) {
                 continue;
             }
-            tempPositions.add(new Position(locationX, locationY));
+            if (inputKey == 'n') {
+                continue;
+            }
+            takeAction(inputKey);
         }
-
-        for (int i = 0; i < numberOfPoint; i += 1) {
-            positions.addLast(tempPositions.poll());
-        }
+        return world;
     }
 
-    public void buildVertical(TETile[][] world) {
+    public void readSeed(String input) {
+        String s = "";
+        StringInput si = new StringInput(input);
 
-        for (int i = 0; i < positions.size() - 1; i += 1) {
-            int x = positions.get(i).getX();
-            int currY = positions.get(i).getY();
-            int nextY = positions.get(i + 1).getY();
-
-            if (nextY < currY) {
-                int temp = currY;
-                currY = nextY;
-                nextY = temp;
-            }
-            for (int j = currY; j < nextY + 1; j += 1) {
-                if (world[x][j] == Tileset.AVATAR) {
-                    continue;
-                }
-                world[x][j] = Tileset.FLOOR;
+        while (si.hasNextKey()) {
+            char inputKey = si.getNextKey();
+            if (String.valueOf(inputKey).matches("^[0-9]+$")) {
+                s = s + inputKey;
             }
         }
+        this.seed = new Random(Integer.parseInt(s));
     }
 
-    public void buildHorizontal(TETile[][] world) {
+    /**
+     * Method used for exploring a fresh world. This method should handle all inputs,
+     * including inputs from the main menu.
+     */
+    public void interactWithKeyboard() {
+        gameover = false;
+        drawBackground();
+        drawMenu();
 
-        for (int i = 0; i < positions.size() - 1; i += 1) {
-            int y = positions.get(i + 1).getY();
-            int currX = positions.get(i).getX();
-            int nextX = positions.get(i + 1).getX();
+        while (!gameover) {
 
-            if (nextX < currX) {
-                int temp = currX;
-                currX = nextX;
-                nextX = temp;
+            if (!Animation.move.equals(Animation.Movement.FALSE)) {
+                tileInfo(new Position((int) StdDraw.mouseX(), (int) StdDraw.mouseY()));
             }
-            for (int j = currX; j < nextX + 1; j += 1) {
-                if (world[j][y] == Tileset.AVATAR) {
-                    continue;
-                }
-                world[j][y] = Tileset.FLOOR;
+
+            if (StdDraw.hasNextKeyTyped()) {
+                char inputKey = getNextKey();
+                record.append(inputKey);
+                System.out.println(record);
+                takeAction(inputKey);
             }
         }
     }
 
-    public void buildRoom(int numberOfPoint, TETile[][] world) {
-        for (int i = 0; i < numberOfPoint - seed.nextInt(3); i += 1) {
-            Position p = positions.get(seed.nextInt(numberOfPoint));
-            int width = seed.nextInt(5);
-            int height = seed.nextInt(5);
-            for (int x = -width; x < width; x += 1) {
-                for (int y = -height; y < height; y += 1) {
-                    int X = x + p.getX();
-                    int Y = y + p.getY();
-                    if (X < 1) {
-                        X = 1;
-                    }
-                    if (X > WIDTH - 2) {
-                        X = WIDTH - 2;
-                    }
-                    if (Y < 1) {
-                        Y = 1;
-                    }
-                    if (Y > HEIGHT - 2) {
-                        Y = HEIGHT - 2;
-                    }
+    public void takeAction(char inputKey) {
 
-                    world[X][Y] = Tileset.FLOOR;
+        if (Animation.move.equals(Animation.Movement.FALSE)) {
+            if (inputKey == 'n') {
+                StdDraw.text(WIDTH * 0.5, HEIGHT - 18, "Enter Seed");
+                StdDraw.show();
+                this.seed = inputSeed();
+                StdDraw.clear(Color.BLACK);
+                StdDraw.text(WIDTH * 0.5, HEIGHT - 15, "Press s to start or q to quit");
+                StdDraw.show();
+            }
+            if (inputKey == 's') {
+                start();
+                Animation.setMove(Animation.Movement.NONE);
+            }
+            if (inputKey == 'q') {
+                System.exit(0);
+            }
+            if (inputKey == 'l') {
+                record.deleteCharAt(record.length() - 1);
+                String savedString = load();
+                if (savedString.equals("error")) {
+                    System.out.println("Found no file");
+                    System.exit(0);
                 }
-             }
+                System.out.println(savedString);
+                interactWithInputString(savedString);
+            }
+        }
+        if (inputKey == ':') {
+            if (getNextKey() == 'q') {
+                record.deleteCharAt(record.length() - 1);
+                save(record.toString());
+                System.exit(0);
+            }
+        }
+        if (inputKey == 'w') {
+            if (Animation.move.equals(Animation.Movement.FALSE)) {
+                return;
+            }
+            avatar.up();
+        }
+        if (inputKey == 's') {
+            if (Animation.move.equals(Animation.Movement.FALSE)) {
+                return;
+            }
+            avatar.down();
+        }
+        if (inputKey == 'a') {
+            if (Animation.move.equals(Animation.Movement.FALSE)) {
+                return;
+            }
+            avatar.left();
+        }
+        if (inputKey == 'd') {
+            if (Animation.move.equals(Animation.Movement.FALSE)) {
+                return;
+            }
+            avatar.right();
         }
     }
 
-    public void buildLongHorizontal(TETile[][] world) {
-        switch (seed.nextInt(3)){
-            case 0 :
-                int LEFT = (int) Math.round(seed.nextInt(WIDTH) * 0.8) + 1;
-                int RIGHT = (int) Math.round(seed.nextInt(WIDTH) * 0.8) + 5;
-                if (LEFT > RIGHT) {
-                    int temp = LEFT;
-                    LEFT = RIGHT;
-                    RIGHT = temp;
-                }
-                if (LEFT < 1) {
-                    LEFT = 1;
-                }
-                if (RIGHT > WIDTH - 2) {
-                    RIGHT = WIDTH - 2;
-                }
-                int y = (int) Math.round(seed.nextInt(HEIGHT) * 0.8) + 1;
-                for (int n = LEFT; n < RIGHT; n += 1) {
-                    world[n][y] = Tileset.FLOOR;
-                    world[n][y + 1] = Tileset.FLOOR;
-                    world[n][y + 2] = Tileset.FLOOR;
-                }
-            case 1 :
-                LEFT = (int) Math.round(seed.nextInt(WIDTH) * 0.8) + 1;
-                RIGHT = (int) Math.round(seed.nextInt(WIDTH) * 0.8) + 5;
-                if (LEFT > RIGHT) {
-                    int temp = LEFT;
-                    LEFT = RIGHT;
-                    RIGHT = temp;
-                }
-                if (LEFT < 1) {
-                    LEFT = 1;
-                }
-                if (RIGHT > WIDTH - 2) {
-                    RIGHT = WIDTH - 2;
-                }
-                y = (int) Math.round(seed.nextInt(HEIGHT) * 0.8) + 1;
-                for (int n = LEFT; n < RIGHT; n += 1) {
-                    world[n][y] = Tileset.FLOOR;
-                    world[n][y + 1] = Tileset.FLOOR;
-                }
-            case 2 :
-                LEFT = (int) Math.round(seed.nextInt(WIDTH) * 0.8) + 1;
-                RIGHT = (int) Math.round(seed.nextInt(WIDTH) * 0.8) + 5;
-                if (LEFT > RIGHT) {
-                    int temp = LEFT;
-                    LEFT = RIGHT;
-                    RIGHT = temp;
-                }
-                if (LEFT < 1) {
-                    LEFT = 1;
-                }
-                if (RIGHT > WIDTH - 2) {
-                    RIGHT = WIDTH - 2;
-                }
-                y = (int) Math.round(seed.nextInt(HEIGHT) * 0.8) + 1;
-                for (int n = LEFT; n < RIGHT; n += 1) {
-                    world[n][y] = Tileset.FLOOR;
-                }
-        }
+    public void start() {
+        ter.initialize(WIDTH, HEIGHT);
+        world = new TETile[WIDTH][HEIGHT];
+        map = new Build();
+        Engine.world = map.build(Engine.world);
+        avatar = new Avatar(Engine.world);
+        ter.renderFrame(world);
     }
 
-    public void buildWall(TETile[][] world) {
-        for (int x = 0; x < WIDTH; x += 1) {
-            for (int y = 0; y < HEIGHT; y += 1) {
-                if (world[x][y] == Tileset.FLOOR) {
-                    continue;
-                }
-                int UP = y + 1;
-                int DOWN = y - 1;
-                int LEFT = x - 1;
-                int RIGHT = x + 1;
-                if (UP > HEIGHT - 1) {
-                    UP = HEIGHT - 1;
-                }
-                if (DOWN < 0) {
-                    DOWN = 0;
-                }
-                if (LEFT < 0) {
-                    LEFT = 0;
-                }
-                if (RIGHT > WIDTH - 1) {
-                    RIGHT = WIDTH - 1;
-                }
-                if (world[x][UP] == Tileset.FLOOR || world[x][DOWN] == Tileset.FLOOR
-                        || world[LEFT][y] == Tileset.FLOOR || world[RIGHT][y] == Tileset.FLOOR
-                        || world[LEFT][UP] == Tileset.FLOOR || world[RIGHT][UP] == Tileset.FLOOR
-                        || world[LEFT][DOWN] == Tileset.FLOOR || world[RIGHT][DOWN] == Tileset.FLOOR) {
-                    world[x][y] = Tileset.WALL;
-                }
+    private Random inputSeed() {
+        String s = "";
+        while (true) {
+            char c = getNextKey();
+            if (!String.valueOf(c).matches("^[0-9]+$")) {
+                break;
+            }
+            s = s + c;
+            drawSeed(s);
+        }
+        record.append(s);
+        return new Random(Integer.parseInt(s));
+    }
 
-                // avoid walls are isolated in the middle
-                if ((world[x][UP] == Tileset.FLOOR && world[x][DOWN] == Tileset.FLOOR)
-                        || (world[LEFT][y] == Tileset.FLOOR && world[RIGHT][y] == Tileset.FLOOR)) {
-                    world[x][y] = Tileset.FLOOR;
-                }
+    public char getNextKey() {
+        while (true) {
+            if (StdDraw.hasNextKeyTyped()) {
+                char c = Character.toLowerCase(StdDraw.nextKeyTyped());
+                return c;
             }
         }
     }
 
-    public void buildGrass(TETile[][] world) {
-        for (int x = 0; x < WIDTH; x += 1) {
-            for (int y = 0; y < HEIGHT; y += 1) {
-                if (world[x][y] == Tileset.FLOOR) {
-                    switch (seed.nextInt(4)){
-                        case 0 :
-                            world[x][y] = Tileset.GRASS;
-                        default:
-                            continue;
-                    }
-                }
+    private void drawSeed(String s) {
+        StdDraw.clear(Color.BLACK);
+        StdDraw.text(WIDTH * 0.5, HEIGHT - 8, "Welcome to Bludo world");
+        StdDraw.text(WIDTH * 0.5, HEIGHT - 12, "New game(n)");
+        StdDraw.text(WIDTH * 0.5, HEIGHT - 15, "Quit(q)");
+        StdDraw.text(WIDTH * 0.5, HEIGHT - 18, "Enter Seed");
+        StdDraw.text(WIDTH * 0.5, HEIGHT - 20, s);
+        StdDraw.show();
+    }
+
+    private void drawBackground() {
+        StdDraw.setCanvasSize(WIDTH * 16,  HEIGHT * 16);
+        Font font = new Font("Monaco", Font.BOLD, 20);
+        StdDraw.setFont(font);
+        StdDraw.setXscale(0, WIDTH);
+        StdDraw.setYscale(0, HEIGHT);
+        StdDraw.clear(Color.BLACK);
+        StdDraw.enableDoubleBuffering();
+        StdDraw.setPenColor(Color.YELLOW);
+    }
+
+    private void drawMenu() {
+        StdDraw.text(WIDTH * 0.5, HEIGHT - 8, "Welcome to Bludo world");
+        StdDraw.text(WIDTH * 0.5, HEIGHT - 12, "New game(n)");
+        StdDraw.text(WIDTH * 0.5, HEIGHT - 15, "Quit(q)");
+        StdDraw.show();
+    }
+
+    private void tileInfo(Position mousePos) {
+        if (mousePos.getY() > 29) {
+            return;
+        }
+        String temp = world[mousePos.getX()][mousePos.getY()].description();
+        if (temp.equals(information)) {
+            return;
+        }
+        information = temp;
+        ter.renderFrame(world);
+        StdDraw.setPenColor(StdDraw.WHITE);
+        StdDraw.textLeft(1, Engine.HEIGHT - 1, information);
+        StdDraw.show();
+    }
+
+    private void save(String save) {
+        File f = new File("/Users/kun/cs61b/cs61b-2019spring/proj3/byow/save_data");
+        try {
+            if (!f.exists()) {
+                f.createNewFile();
+            }
+            FileOutputStream fs = new FileOutputStream(f);
+            ObjectOutputStream os = new ObjectOutputStream(fs);
+            os.writeObject(save);
+        }  catch (FileNotFoundException e) {
+            System.out.println("file not found");
+            System.exit(0);
+        } catch (IOException e) {
+            System.out.println(e);
+            System.exit(0);
+        }
+    }
+
+    private String load() {
+        File f = new File("/Users/kun/cs61b/cs61b-2019spring/proj3/byow/save_data");
+        if (f.exists()) {
+            try {
+                FileInputStream fs = new FileInputStream(f);
+                ObjectInputStream os = new ObjectInputStream(fs);
+                return (String) os.readObject();
+            } catch (FileNotFoundException e) {
+                System.out.println("file not found");
+                System.exit(0);
+            } catch (IOException e) {
+                System.out.println(e);
+                System.exit(0);
+            } catch (ClassNotFoundException e) {
+                System.out.println("class not found");
+                System.exit(0);
             }
         }
+        return "error";
     }
 
-    public void buildLockedDoor(TETile[][] world) {
-
-        ArrayList<Position> p = new ArrayList<>();
-        for (int x = 0; x < WIDTH; x += 1) {
-            for (int y = 0; y < HEIGHT; y += 1) {
-                if (world[x][y] == Tileset.WALL) {
-                    int UP = y + 1;
-                    int DOWN = y - 1;
-                    int LEFT = x - 1;
-                    int RIGHT = x + 1;
-                    if (UP > HEIGHT - 1) {
-                        UP = HEIGHT - 1;
-                    }
-                    if (DOWN < 0) {
-                        DOWN = 0;
-                    }
-                    if (LEFT < 0) {
-                        LEFT = 0;
-                    }
-                    if (RIGHT > WIDTH - 1) {
-                        RIGHT = WIDTH - 1;
-                    }
-                    if ((world[LEFT][y] == Tileset.WALL && world[x][UP] == Tileset.WALL) ||
-                            (world[RIGHT][y] == Tileset.WALL && world[x][UP] == Tileset.WALL) ||
-                            (world[RIGHT][y] == Tileset.WALL && world[x][DOWN] == Tileset.WALL) ||
-                            (world[LEFT][y] == Tileset.WALL && world[x][DOWN] == Tileset.WALL)) {
-                        continue;
-                    }
-                    p.add(new Position(x, y));
-                }
-            }
-        }
-        int random = seed.nextInt(p.size());
-        world[p.get(random).getX()][p.get(random).getY()] = Tileset.LOCKED_DOOR;
-    }
-
-
-
-    // ---------------stupid helper----------------
-    public void point(TETile[][] world) {
-        for (Position p : positions) {
-            world[p.getX()][p.getY()] = Tileset.AVATAR;
-        }
-    }
-
-    // --------------input string helper--------------
     private class StringInput {
         String input;
         int index;
@@ -386,6 +305,10 @@ public class Engine {
 
         private boolean hasNextKey() {
             return index < input.length();
+        }
+
+        private void refresh() {
+            index = 0;
         }
     }
 }
