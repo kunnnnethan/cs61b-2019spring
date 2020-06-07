@@ -1,9 +1,7 @@
 package byow.Core;
 
-import byow.SaveDemo.Editor;
 import byow.TileEngine.TERenderer;
 import byow.TileEngine.TETile;
-import byow.TileEngine.Tileset;
 import edu.princeton.cs.introcs.StdDraw;
 
 import java.awt.*;
@@ -11,18 +9,24 @@ import java.io.*;
 import java.util.*;
 import java.util.logging.Level;
 
+import static byow.Core.Avatar.currX;
+import static byow.Core.Avatar.currY;
+
 public class Engine {
     TERenderer ter = new TERenderer();
     /* Feel free to change the width and height. */
+    public static TETile[][] world = null;
     public static final int WIDTH = 80;
     public static final int HEIGHT = 30;
     public static Random seed;
-    public static boolean gameover;
-    public static TETile[][] world = null;
+    public static boolean gameover = false;
+    public static boolean dark = true;
+    public static boolean win = false;
     private StringBuilder record = new StringBuilder();
     String information;
     Build map;
     Avatar avatar;
+    Monster monster;
 
     /**
      * Method used for autograding and testing your code. The input string will be a series
@@ -72,20 +76,8 @@ public class Engine {
             }
             takeAction(inputKey);
         }
+        record.append(input);
         return world;
-    }
-
-    public void readSeed(String input) {
-        String s = "";
-        StringInput si = new StringInput(input);
-
-        while (si.hasNextKey()) {
-            char inputKey = si.getNextKey();
-            if (String.valueOf(inputKey).matches("^[0-9]+$")) {
-                s = s + inputKey;
-            }
-        }
-        this.seed = new Random(Integer.parseInt(s));
     }
 
     /**
@@ -93,7 +85,6 @@ public class Engine {
      * including inputs from the main menu.
      */
     public void interactWithKeyboard() {
-        gameover = false;
         drawBackground();
         drawMenu();
 
@@ -106,9 +97,26 @@ public class Engine {
             if (StdDraw.hasNextKeyTyped()) {
                 char inputKey = getNextKey();
                 record.append(inputKey);
-                System.out.println(record);
                 takeAction(inputKey);
+                monster.hunt();
+                render();
             }
+        }
+
+        if (win) {
+            StdDraw.clear(Color.BLACK);
+            StdDraw.setPenColor(Color.YELLOW);
+            Font font = new Font("Monaco", Font.BOLD, 40);
+            StdDraw.setFont(font);
+            StdDraw.text(WIDTH * 0.5, HEIGHT - 12, "You win");
+            StdDraw.show();
+        } else {
+            StdDraw.clear(Color.BLACK);
+            StdDraw.setPenColor(Color.RED);
+            Font font = new Font("Monaco", Font.BOLD, 40);
+            StdDraw.setFont(font);
+            StdDraw.text(WIDTH * 0.5, HEIGHT - 12, "You lose");
+            StdDraw.show();
         }
     }
 
@@ -116,16 +124,28 @@ public class Engine {
 
         if (Animation.move.equals(Animation.Movement.FALSE)) {
             if (inputKey == 'n') {
-                StdDraw.text(WIDTH * 0.5, HEIGHT - 18, "Enter Seed");
+                StdDraw.text(WIDTH * 0.5, HEIGHT - 22, "Enter Seed");
                 StdDraw.show();
-                this.seed = inputSeed();
-                StdDraw.clear(Color.BLACK);
-                StdDraw.text(WIDTH * 0.5, HEIGHT - 15, "Press s to start or q to quit");
-                StdDraw.show();
+
+                String s = "";
+                while (true) {
+                    char c = getNextKey();
+                    if (!String.valueOf(c).matches("^[0-9]+$")) {
+                        inputKey = c;
+                        break;
+                    }
+                    s = s + c;
+                    drawSeed(s);
+                }
+                record.append(s);
+                if (s.length() > 0) {
+                    this.seed = new Random(Long.parseLong(s));
+                }
             }
             if (inputKey == 's') {
-                start();
                 Animation.setMove(Animation.Movement.NONE);
+                start();
+                return;
             }
             if (inputKey == 'q') {
                 System.exit(0);
@@ -140,6 +160,7 @@ public class Engine {
                 System.out.println(savedString);
                 interactWithInputString(savedString);
             }
+            return;
         }
         if (inputKey == ':') {
             if (getNextKey() == 'q') {
@@ -149,28 +170,28 @@ public class Engine {
             }
         }
         if (inputKey == 'w') {
-            if (Animation.move.equals(Animation.Movement.FALSE)) {
-                return;
-            }
+            Animation.setMove(Animation.Movement.UP);
+            moveBefore();
             avatar.up();
         }
         if (inputKey == 's') {
-            if (Animation.move.equals(Animation.Movement.FALSE)) {
-                return;
-            }
+            Animation.setMove(Animation.Movement.DOWN);
+            moveBefore();
             avatar.down();
         }
         if (inputKey == 'a') {
-            if (Animation.move.equals(Animation.Movement.FALSE)) {
-                return;
-            }
+            Animation.setMove(Animation.Movement.LEFT);
+            moveBefore();
             avatar.left();
         }
         if (inputKey == 'd') {
-            if (Animation.move.equals(Animation.Movement.FALSE)) {
-                return;
-            }
+            Animation.setMove(Animation.Movement.RIGHT);
+            moveBefore();
             avatar.right();
+        }
+        if (inputKey == 'h') {
+            monster.hunt();
+            render();
         }
     }
 
@@ -179,59 +200,64 @@ public class Engine {
         world = new TETile[WIDTH][HEIGHT];
         map = new Build();
         Engine.world = map.build(Engine.world);
+        monster = new Monster(Engine.world);
         avatar = new Avatar(Engine.world);
-        ter.renderFrame(world);
+        System.out.println(TETile.toString(world));
     }
 
-    private Random inputSeed() {
+    public void render() {
+        if (Engine.dark) {
+            ter.renderDarkFrame(world, currX, currY);
+        } else {
+            ter.renderFrame(world);
+        }
+    }
+
+    //--------------helper---------------
+
+    private void moveBefore() {
+        if (Animation.move.equals(Animation.Movement.UP)) {
+            world[currX][currY] = Animation.AVATAR_U1;
+            render();
+            StdDraw.pause(10);
+            world[currX][currY] = Animation.AVATAR_U2;
+            render();
+        }
+        if (Animation.move.equals(Animation.Movement.DOWN)) {
+            world[currX][currY] = Animation.AVATAR_D1;
+            render();
+            StdDraw.pause(10);
+            world[currX][currY] = Animation.AVATAR_D2;
+            render();
+        }
+        if (Animation.move.equals(Animation.Movement.LEFT)) {
+            world[currX][currY] = Animation.AVATAR_L1;
+            render();
+            StdDraw.pause(10);
+            world[currX][currY] = Animation.AVATAR_L2;
+            render();
+        }
+        if (Animation.move.equals(Animation.Movement.RIGHT)) {
+            world[currX][currY] = Animation.AVATAR_R1;
+            render();
+            tileInfo(new Position((int) StdDraw.mouseX(), (int) StdDraw.mouseY()));
+            StdDraw.pause(10);
+            world[currX][currY] = Animation.AVATAR_R2;
+            render();
+        }
+    }
+
+    private void readSeed(String input) {
         String s = "";
-        while (true) {
-            char c = getNextKey();
-            if (!String.valueOf(c).matches("^[0-9]+$")) {
-                break;
-            }
-            s = s + c;
-            drawSeed(s);
-        }
-        record.append(s);
-        return new Random(Integer.parseInt(s));
-    }
+        StringInput si = new StringInput(input);
 
-    public char getNextKey() {
-        while (true) {
-            if (StdDraw.hasNextKeyTyped()) {
-                char c = Character.toLowerCase(StdDraw.nextKeyTyped());
-                return c;
+        while (si.hasNextKey()) {
+            char inputKey = si.getNextKey();
+            if (String.valueOf(inputKey).matches("^[0-9]+$")) {
+                s = s + inputKey;
             }
         }
-    }
-
-    private void drawSeed(String s) {
-        StdDraw.clear(Color.BLACK);
-        StdDraw.text(WIDTH * 0.5, HEIGHT - 8, "Welcome to Bludo world");
-        StdDraw.text(WIDTH * 0.5, HEIGHT - 12, "New game(n)");
-        StdDraw.text(WIDTH * 0.5, HEIGHT - 15, "Quit(q)");
-        StdDraw.text(WIDTH * 0.5, HEIGHT - 18, "Enter Seed");
-        StdDraw.text(WIDTH * 0.5, HEIGHT - 20, s);
-        StdDraw.show();
-    }
-
-    private void drawBackground() {
-        StdDraw.setCanvasSize(WIDTH * 16,  HEIGHT * 16);
-        Font font = new Font("Monaco", Font.BOLD, 20);
-        StdDraw.setFont(font);
-        StdDraw.setXscale(0, WIDTH);
-        StdDraw.setYscale(0, HEIGHT);
-        StdDraw.clear(Color.BLACK);
-        StdDraw.enableDoubleBuffering();
-        StdDraw.setPenColor(Color.YELLOW);
-    }
-
-    private void drawMenu() {
-        StdDraw.text(WIDTH * 0.5, HEIGHT - 8, "Welcome to Bludo world");
-        StdDraw.text(WIDTH * 0.5, HEIGHT - 12, "New game(n)");
-        StdDraw.text(WIDTH * 0.5, HEIGHT - 15, "Quit(q)");
-        StdDraw.show();
+        this.seed = new Random(Long.parseLong(s));
     }
 
     private void tileInfo(Position mousePos) {
@@ -243,14 +269,53 @@ public class Engine {
             return;
         }
         information = temp;
-        ter.renderFrame(world);
+        if (dark) {
+            ter.renderDarkFrame(world, currX, currY);
+        } else {
+            ter.renderFrame(world);
+        }
         StdDraw.setPenColor(StdDraw.WHITE);
         StdDraw.textLeft(1, Engine.HEIGHT - 1, information);
         StdDraw.show();
     }
 
+    private void drawBackground() {
+        StdDraw.setCanvasSize(WIDTH * 16,  HEIGHT * 16);
+        StdDraw.setXscale(0, WIDTH);
+        StdDraw.setYscale(0, HEIGHT);
+        StdDraw.clear(Color.BLACK);
+        StdDraw.enableDoubleBuffering();
+        StdDraw.setPenColor(Color.YELLOW);
+    }
+
+    private void drawMenu() {
+        Font font = new Font("Monaco", Font.BOLD, 30);
+        StdDraw.setFont(font);
+        StdDraw.text(WIDTH * 0.5, HEIGHT - 9, "Welcome to Bludo world");
+        StdDraw.show();
+        font = new Font("Monaco", Font.BOLD, 20);
+        StdDraw.setFont(font);
+        StdDraw.text(WIDTH * 0.5, HEIGHT - 15, "New game(n)");
+        StdDraw.text(WIDTH * 0.5, HEIGHT - 17, "Load game(l)");
+        StdDraw.text(WIDTH * 0.5, HEIGHT - 19, "Quit(q)");
+        StdDraw.show();
+    }
+
+    private void drawSeed(String s) {
+        StdDraw.clear(Color.BLACK);
+        Font font = new Font("Monaco", Font.BOLD, 30);
+        StdDraw.setFont(font);
+        StdDraw.text(WIDTH * 0.5, HEIGHT - 9, "Press s to start or q to quit");
+        StdDraw.show();
+        font = new Font("Monaco", Font.BOLD, 20);
+        StdDraw.setFont(font);
+        StdDraw.text(WIDTH * 0.5, HEIGHT - 22, "Enter Seed");
+        StdDraw.text(WIDTH * 0.5, HEIGHT - 24, s);
+        StdDraw.show();
+    }
+
     private void save(String save) {
-        File f = new File("/Users/kun/cs61b/cs61b-2019spring/proj3/byow/save_data");
+        File f = new File("/Users/kun/cs61b/cs61b-2019spring/proj3/byow/data.txt");
         try {
             if (!f.exists()) {
                 f.createNewFile();
@@ -268,7 +333,7 @@ public class Engine {
     }
 
     private String load() {
-        File f = new File("/Users/kun/cs61b/cs61b-2019spring/proj3/byow/save_data");
+        File f = new File("/Users/kun/cs61b/cs61b-2019spring/proj3/byow/data.txt");
         if (f.exists()) {
             try {
                 FileInputStream fs = new FileInputStream(f);
@@ -288,6 +353,15 @@ public class Engine {
         return "error";
     }
 
+    public char getNextKey() {
+        while (true) {
+            if (StdDraw.hasNextKeyTyped()) {
+                char c = Character.toLowerCase(StdDraw.nextKeyTyped());
+                return c;
+            }
+        }
+    }
+
     private class StringInput {
         String input;
         int index;
@@ -305,10 +379,6 @@ public class Engine {
 
         private boolean hasNextKey() {
             return index < input.length();
-        }
-
-        private void refresh() {
-            index = 0;
         }
     }
 }

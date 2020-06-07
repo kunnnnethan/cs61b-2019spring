@@ -98,4 +98,28 @@ public class TERenderer {
         }
         StdDraw.show();
     }
+
+    public void renderDarkFrame(TETile[][] world, int PosX, int PosY) {
+        int numXTiles = world.length;
+        int numYTiles = world[0].length;
+        int upperbound = PosY + 3;
+        int lowerbound = PosY - 3;
+        int leftbound = PosX - 3;
+        int rightbound = PosX + 3;
+        StdDraw.clear(new Color(0, 0, 0));
+        for (int x = 0; x < numXTiles; x += 1) {
+            for (int y = 0; y < numYTiles; y += 1) {
+                if (world[x][y] == null) {
+                    throw new IllegalArgumentException("Tile at position x=" + x + ", y=" + y
+                            + " is null.");
+                }
+                if (x > rightbound || y > upperbound || x < leftbound || y < lowerbound) {
+                    continue;
+                } else {
+                    world[x][y].draw(x + xOffset, y + yOffset);
+                }
+            }
+        }
+        StdDraw.show();
+    }
 }

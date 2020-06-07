@@ -33,7 +33,7 @@ public class Animation {
         LEFT,
         RIGHT,
         UP,
-        DOWN;
+        DOWN,
     }
 
     public static void setMove(Movement m) {

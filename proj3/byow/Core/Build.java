@@ -44,8 +44,11 @@ public class Build {
         // build locked door
         buildLockedDoor(initialWorldFrame);
 
-        // clean weird walls
-        cleanTrash(initialWorldFrame);
+        // build light source
+        buildLightSource(initialWorldFrame);
+
+                // clean weird walls
+                cleanTrash(initialWorldFrame);
 
         //point(initialWorldFrame);
         return initialWorldFrame;
@@ -296,6 +299,10 @@ public class Build {
         }
         int random = Engine.seed.nextInt(p.size());
         world[p.get(random).getX()][p.get(random).getY()] = Tileset.LOCKED_DOOR;
+    }
+
+    public void buildLightSource(TETile[][] world) {
+        world[positions.get(2).getX()][positions.get(2).getY()] = Tileset.LIGHT;
     }
 
     public void cleanTrash(TETile[][] world) {

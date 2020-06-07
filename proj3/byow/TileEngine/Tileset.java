@@ -24,15 +24,11 @@ public class Tileset {
             "floor", "/Users/kun/cs61b/cs61b-2019spring/proj3/byow/lab12/floor.png");
     public static final TETile NOTHING = new TETile(' ', Color.black, Color.black, "nothing");
     public static final TETile GRASS = new TETile('"', Color.green, Color.black, "grass", "/Users/kun/cs61b/cs61b-2019spring/proj3/byow/lab12/grass.png");
-    public static final TETile WATER = new TETile('≈', Color.blue, Color.black, "water");
     public static final TETile FLOWER = new TETile('❀', Color.magenta, Color.pink, "flower");
-    public static final TETile LOCKED_DOOR = new TETile('█', Color.orange, Color.black,
-            "locked door", "/Users/kun/cs61b/cs61b-2019spring/proj3/byow/lab12/lockeddoor.png");
-    public static final TETile UNLOCKED_DOOR = new TETile('▢', Color.orange, Color.black,
-            "unlocked door", "/Users/kun/cs61b/cs61b-2019spring/proj3/byow/lab12/opendoor.png");
-    public static final TETile SAND = new TETile('▒', Color.yellow, Color.black, "sand");
-    public static final TETile MOUNTAIN = new TETile('▲', Color.gray, Color.black, "mountain");
-    public static final TETile TREE = new TETile('♠', Color.green, Color.black, "tree", "/Users/kun/cs61b/cs61b-2019spring/proj3/byow/lab12/tree.png");
+    public static final TETile LOCKED_DOOR = new TETile('█', Color.orange, Color.black, "locked door", "/Users/kun/cs61b/cs61b-2019spring/proj3/byow/lab12/lockeddoor.png");
+    public static final TETile LIGHT = new TETile('♠', Color.green, Color.black, "light source", "/Users/kun/cs61b/cs61b-2019spring/proj3/byow/lab12/light.png");
+    public static final TETile MONSTER = new TETile('♠', Color.green, Color.black, "monster", "/Users/kun/cs61b/cs61b-2019spring/proj3/byow/lab12/monster.png");
+
 }
 
 
